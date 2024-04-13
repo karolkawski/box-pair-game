@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas, useThree, useLoader } from '@react-three/fiber';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { Edges } from '@react-three/drei';
 import * as THREE from 'three';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 
 const size = [4, 4];
 const boxSize = 1;
-const selectedPair = [false, false];
 
 const CameraController = ({ distance }) => {
   const { camera, gl } = useThree();
@@ -26,57 +26,86 @@ const CameraController = ({ distance }) => {
 const Box = ({ x, y }) => {
   const [selected, select] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const boxFbx = useLoader(FBXLoader, '/assets/BOX/box.fbx');
+  const doorFbx = useLoader(FBXLoader, '/assets/BOX/door.fbx');
 
   useEffect(() => {
     document.body.style.cursor = hovered ? 'pointer' : 'auto';
   }, [hovered]);
+
+  const gridSize = size.map((s) => s * boxSize);
+  const gridCenter = [
+    (gridSize[0] - boxSize) / 2 + 1,
+    (gridSize[1] - boxSize) / 2,
+  ];
+
   return (
-    <group>
-      <mesh position={[x, y, 0]}>
-        <boxGeometry args={[boxSize, boxSize, boxSize]} />
-        <meshStandardMaterial />
-        <mesh
+    <group
+      position={[gridCenter[0] - x * boxSize, gridCenter[1] - y * boxSize, 1]}
+      name={'locker'}
+    >
+      <primitive object={boxFbx.clone()} name={'box'}>
+        <primitive
+          object={doorFbx.clone()}
           transparent={selected}
-          position={[0, 0, 0.55]}
           onClick={(event) => select(!selected)}
           onPointerOver={() => setHovered(true)}
           onPointerOut={() => setHovered(false)}
+          name={'door'}
         >
-          <boxGeometry args={[boxSize, boxSize, 0.1]} />
-          <Edges
-            linewidth={2}
-            threshold={15}
-            color={selected ? '#c02040' : 'black'}
-          />
-
           {selected ? (
             <meshPhongMaterial
               color="#ff0000"
-              opacity={0.1}
+              opacity={0.01}
               transparent={selected}
             />
           ) : (
-            <meshStandardMaterial color={selected ? 'hotpink' : 'orange'} />
+            <meshStandardMaterial color={selected ? 'hotpink' : 'graay'} />
           )}
-        </mesh>
-      </mesh>
+        </primitive>
+      </primitive>
     </group>
   );
 };
+
+const DirectionalLightHelper = () => {
+  const { scene } = useThree();
+  useEffect(() => {
+    const directionalLight = scene.getObjectByName('directionalLight');
+    if (directionalLight) {
+      const helper = new THREE.DirectionalLightHelper(directionalLight, 5); // Adjust the size of the helper as needed
+      scene.add(helper);
+      return () => {
+        scene.remove(helper);
+      };
+    }
+  }, [scene]);
+
+  return null;
+};
+
 const App: React.FC = () => {
   const gridSize = size.map((s) => s * boxSize);
+  const [scene, setScene] = useState(null);
+
+  useEffect(() => {
+    if (scene) {
+      console.log('Scene:', scene);
+    }
+  }, [scene]);
   const canvasWidth = gridSize[0] - 1;
 
   return (
     <div id="App">
       <div style={{ width: '100vw', height: '100vh' }}>
-        <Canvas>
+        <Canvas onCreated={({ scene }) => setScene(scene)}>
           <ambientLight intensity={0.5} />
-          <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} />
-          <pointLight position={[-10, -10, -10]} />
-          <CameraController distance={5} />
-          <group position={[-canvasWidth / 2, 0, 0]}>
-            {' '}
+          <spotLight position={[-1, -1, -1]} angle={0.15} penumbra={1} />
+          <pointLight position={[10, 10, 10]} />
+          {/* <directionalLight position={[10, 10, 10]} name="directionalLight" />
+          <DirectionalLightHelper /> */}
+          <CameraController distance={10} />
+          <group position={[-canvasWidth / 2, 0, 0]} name={'lockers'}>
             {Array.from({ length: size[0] }).map((_, i) => (
               <React.Fragment key={i}>
                 {Array.from({ length: size[1] }).map((_, j) => (
