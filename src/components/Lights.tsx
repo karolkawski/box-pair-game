@@ -1,5 +1,3 @@
-import { DirectionalLightHelper } from './Helpers/DirectionalLightHelper';
-
 export const Lights = () => {
   return (
     <>
@@ -10,7 +8,6 @@ export const Lights = () => {
         intensity={1}
         name="DirectionalLight"
       />
-      <DirectionalLightHelper />
     </>
   );
 };
