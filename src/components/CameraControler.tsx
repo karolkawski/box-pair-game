@@ -1,6 +1,6 @@
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { useThree } from '@react-three/fiber';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export const CameraController = ({ distance }) => {
   const { camera, gl } = useThree();
@@ -8,15 +8,10 @@ export const CameraController = ({ distance }) => {
     const controls = new OrbitControls(camera, gl.domElement);
     controls.distance = distance;
     controls.minDistance = distance;
-    // const maxHorizontalAngle = Math.PI / 6;
-    // const minVerticalAngle = Math.PI / 18;
-    // const maxVerticalAngle = Math.PI / 18;
+    const maxHorizontalAngle = Math.PI / 6;
 
-    // controls.maxAzimuthAngle = maxHorizontalAngle;
-    // controls.minAzimuthAngle = -maxHorizontalAngle;
-
-    // controls.maxPolarAngle = Math.PI / 2 - minVerticalAngle;
-    // controls.minPolarAngle = Math.PI / 2 + maxVerticalAngle;
+    controls.maxAzimuthAngle = maxHorizontalAngle;
+    controls.minAzimuthAngle = -maxHorizontalAngle;
 
     controls.update();
     return () => {
