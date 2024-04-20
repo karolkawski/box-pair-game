@@ -27,7 +27,7 @@ const Box = ({ x, y }) => {
   const [selected, select] = useState(false);
   const [hovered, setHovered] = useState(false);
   const boxFbx = useLoader(FBXLoader, '/assets/BOX/box.fbx');
-  const doorFbx = useLoader(FBXLoader, '/assets/BOX/door.fbx');
+  console.log('🚀 ~ Box ~ boxFbx:', boxFbx);
 
   useEffect(() => {
     document.body.style.cursor = hovered ? 'pointer' : 'auto';
@@ -44,25 +44,22 @@ const Box = ({ x, y }) => {
       position={[gridCenter[0] - x * boxSize, gridCenter[1] - y * boxSize, 1]}
       name={'locker'}
     >
-      <primitive object={boxFbx.clone()} name={'box'}>
-        <primitive
-          object={doorFbx.clone()}
-          transparent={selected}
-          onClick={(event) => select(!selected)}
-          onPointerOver={() => setHovered(true)}
-          onPointerOut={() => setHovered(false)}
-          name={'door'}
-        >
-          {selected ? (
-            <meshPhongMaterial
-              color="#ff0000"
-              opacity={0.01}
-              transparent={selected}
-            />
-          ) : (
-            <meshStandardMaterial color={selected ? 'hotpink' : 'graay'} />
-          )}
-        </primitive>
+      <primitive
+        object={boxFbx.clone()}
+        name={'box'}
+        onClick={(event) => select(!selected)}
+        onPointerOver={() => setHovered(true)}
+        onPointerOut={() => setHovered(false)}
+      >
+        {/* {selected ? (
+          <meshPhongMaterial
+            color="#ff0000"
+            opacity={0.01}
+            transparent={selected}
+          />
+        ) : (
+          <meshStandardMaterial color={selected ? 'hotpink' : 'graay'} />
+        )} */}
       </primitive>
     </group>
   );
@@ -71,9 +68,10 @@ const Box = ({ x, y }) => {
 const DirectionalLightHelper = () => {
   const { scene } = useThree();
   useEffect(() => {
-    const directionalLight = scene.getObjectByName('directionalLight');
+    const directionalLight = scene.getObjectByName('DirectionalLight');
+    console.log('🚀 ~ useEffect ~ directionalLight:', directionalLight);
     if (directionalLight) {
-      const helper = new THREE.DirectionalLightHelper(directionalLight, 5); // Adjust the size of the helper as needed
+      const helper = new THREE.DirectionalLightHelper(directionalLight, 10); // Adjust the size of the helper as needed
       scene.add(helper);
       return () => {
         scene.remove(helper);
@@ -100,10 +98,16 @@ const App: React.FC = () => {
       <div style={{ width: '100vw', height: '100vh' }}>
         <Canvas onCreated={({ scene }) => setScene(scene)}>
           <ambientLight intensity={0.5} />
-          <spotLight position={[-1, -1, -1]} angle={0.15} penumbra={1} />
-          <pointLight position={[10, 10, 10]} />
-          {/* <directionalLight position={[10, 10, 10]} name="directionalLight" />
-          <DirectionalLightHelper /> */}
+          <directionalLight
+            color="white"
+            position={[0, 0, 10]}
+            intensity={0.5}
+            name="DirectionalLight"
+          />
+
+          {/* <spotLight position={[-1, -1, -1]} angle={0.15} penumbra={1} /> */}
+          {/* <pointLight position={[10, 10, 10]} /> */}
+          <DirectionalLightHelper />
           <CameraController distance={10} />
           <group position={[-canvasWidth / 2, 0, 0]} name={'lockers'}>
             {Array.from({ length: size[0] }).map((_, i) => (
