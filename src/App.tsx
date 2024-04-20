@@ -21,7 +21,7 @@ const App: React.FC = () => {
       console.log('Scene:', scene);
     }
   }, [scene]);
-  const canvasWidth = gridSize[0] - 3;
+  const canvasWidth = gridSize[0] - (size[0] - 1);
 
   return (
     <div id="App">
