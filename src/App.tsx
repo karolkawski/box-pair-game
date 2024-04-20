@@ -1,89 +1,49 @@
 import React, { useEffect, useState } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { Edges } from '@react-three/drei';
-import * as THREE from 'three';
+import { Canvas } from '@react-three/fiber';
+import { CameraController } from './components/CameraControler';
+import { getRandomImage } from './utils/getRandomImage';
+import { createArray } from './utils/createArray';
+import { Locker } from './components/Locker/Locker';
+import { Lights } from './components/Lights';
+import { Helpers } from './components/Helpers/Helpers';
 
 const size = [4, 4];
 const boxSize = 1;
-const selectedPair = [false, false];
 
-const CameraController = ({ distance }) => {
-  const { camera, gl } = useThree();
-  useEffect(() => {
-    const controls = new OrbitControls(camera, gl.domElement);
-    controls.distance = distance;
-    controls.minDistance = distance;
-    controls.maxDistance = distance;
-    controls.update();
-    return () => {
-      controls.dispose();
-    };
-  }, [camera, gl]);
-  return null;
-};
-
-const Box = ({ x, y }) => {
-  const [selected, select] = useState(false);
-  const [hovered, setHovered] = useState(false);
-
-  useEffect(() => {
-    document.body.style.cursor = hovered ? 'pointer' : 'auto';
-  }, [hovered]);
-  return (
-    <group>
-      <mesh position={[x, y, 0]}>
-        <boxGeometry args={[boxSize, boxSize, boxSize]} />
-        <meshStandardMaterial />
-        <mesh
-          transparent={selected}
-          position={[0, 0, 0.55]}
-          onClick={(event) => select(!selected)}
-          onPointerOver={() => setHovered(true)}
-          onPointerOut={() => setHovered(false)}
-        >
-          <boxGeometry args={[boxSize, boxSize, 0.1]} />
-          <Edges
-            linewidth={2}
-            threshold={15}
-            color={selected ? '#c02040' : 'black'}
-          />
-
-          {selected ? (
-            <meshPhongMaterial
-              color="#ff0000"
-              opacity={0.1}
-              transparent={selected}
-            />
-          ) : (
-            <meshStandardMaterial color={selected ? 'hotpink' : 'orange'} />
-          )}
-        </mesh>
-      </mesh>
-    </group>
-  );
-};
 const App: React.FC = () => {
   const gridSize = size.map((s) => s * boxSize);
-  const canvasWidth = gridSize[0] - 1;
+  const [scene, setScene] = useState(null);
+  const pairNumber = (size[0] * size[1]) / 2;
+  const pairArray = createArray(pairNumber);
+
+  useEffect(() => {
+    if (scene) {
+      console.log('Scene:', scene);
+    }
+  }, [scene]);
+  const canvasWidth = gridSize[0] - (size[0] - 1);
 
   return (
     <div id="App">
       <div style={{ width: '100vw', height: '100vh' }}>
-        <Canvas>
-          <ambientLight intensity={0.5} />
-          <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} />
-          <pointLight position={[-10, -10, -10]} />
-          <CameraController distance={5} />
-          <group position={[-canvasWidth / 2, 0, 0]}>
-            {' '}
-            {Array.from({ length: size[0] }).map((_, i) => (
-              <React.Fragment key={i}>
-                {Array.from({ length: size[1] }).map((_, j) => (
-                  <Box key={`${i}-${j}`} x={i} y={j} />
-                ))}
-              </React.Fragment>
-            ))}
+        <Canvas onCreated={({ scene }) => setScene(scene)}>
+          <Lights />
+          <CameraController distance={10} />
+          <Helpers />
+          <group position={[-canvasWidth / 2, 0, 0]} name={'lockers'}>
+            {Array.from({ length: size[0] * size[1] }).map((_, i) => {
+              const index = getRandomImage(pairArray);
+              return (
+                <Locker
+                  index={index}
+                  key={`${i}`}
+                  x={(i % size[0]) + 1}
+                  y={Math.floor(i / size[0]) + 1}
+                  size={size}
+                  boxSize={boxSize}
+                />
+              );
+            })}
           </group>
         </Canvas>
       </div>
