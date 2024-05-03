@@ -4,7 +4,6 @@ import { splitObject } from '../../utils/splitObject';
 import { Edges } from '@react-three/drei';
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
-import { pairs } from '../../pairs';
 
 export const Locker = ({
   x,
@@ -12,7 +11,6 @@ export const Locker = ({
   index,
   size,
   boxSize,
-  clickAmount,
   handleClickAmount,
   selectedPair,
   setSelectedPair,
@@ -20,7 +18,6 @@ export const Locker = ({
   const [selected, select] = useState(false);
   const [hovered, setHovered] = useState(false);
   const boxFbx = useLoader(FBXLoader, '/assets/Models/locker.fbx');
-
   const [locker, door, image] = splitObject(boxFbx.children);
 
   const texture = useLoader(
@@ -28,33 +25,33 @@ export const Locker = ({
     `/assets/Images/${index + 1}.png`
   );
 
-  const material = new THREE.MeshBasicMaterial({ map: texture });
-
-  const handleClick = () => {
-    if (clickAmount % 2 === 1) {
-      return;
-    }
-
-    select(!selected);
-  };
-
-  useEffect(() => {
-    document.body.style.cursor = hovered ? 'pointer' : 'auto';
-  }, [hovered]);
-
   const gridSize = size.map((s) => s * boxSize);
   const gridCenter = [
     (gridSize[0] - boxSize) / 2 + 1,
     (gridSize[1] - boxSize) / 2,
   ];
 
+  const handleSelectClick = () => {
+    const [first, second] = selectedPair;
+    if (first && second) {
+      setSelectedPair([null, null]);
+      return;
+    }
+    select(true);
+  };
+
+  useEffect(() => {
+    document.body.style.cursor = hovered ? 'pointer' : 'auto';
+  }, [hovered]);
+
   useEffect(() => {
     handleClickAmount(selected, index);
   }, [selected]);
 
   useEffect(() => {
-    if (selectedPair[0] !== null && selectedPair[1] !== null) {
-      if (selectedPair[0] === selectedPair[1]) {
+    const [first, second] = selectedPair;
+    if (first !== null && second !== null) {
+      if (first === second) {
         return;
       }
       if (selectedPair.includes(index) && selected) {
@@ -73,7 +70,7 @@ export const Locker = ({
       <primitive
         object={door.clone()}
         name={'front'}
-        onClick={() => handleClick()}
+        onClick={() => handleSelectClick()}
         onPointerOver={() => setHovered(true)}
         onPointerOut={() => setHovered(false)}
       >
