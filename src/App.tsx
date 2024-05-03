@@ -9,12 +9,53 @@ import { Helpers } from './components/Helpers/Helpers';
 
 const size = [4, 4];
 const boxSize = 1;
+const pairNumber = (size[0] * size[1]) / 2;
+const pairArray = createArray(pairNumber);
+const indexes = Array.from({ length: size[0] * size[1] }).map((_, i) => {
+  return getRandomImage(pairArray);
+});
+console.log('🚀 ~ indexes ~ indexes:', indexes);
 
 const App: React.FC = () => {
   const gridSize = size.map((s) => s * boxSize);
   const [scene, setScene] = useState(null);
-  const pairNumber = (size[0] * size[1]) / 2;
-  const pairArray = createArray(pairNumber);
+  const [clickAmount, setClickAmount] = useState(0);
+  const [selectedPair, setSelectedPair] = useState([null, null]);
+  const [selectedHistory, setselectedHistory] = useState([]);
+
+  const handleClickAmount = (selected, index) => {
+    let newAmount;
+    if (selected) {
+      newAmount = clickAmount + 1;
+      setselectedHistory([...selectedHistory, index]);
+      if (selectedPair[0] === null) {
+        setSelectedPair([index, selectedPair[1]]);
+      } else {
+        setSelectedPair([selectedPair[0], index]);
+      }
+    } else {
+      newAmount = clickAmount - 1;
+    }
+
+    setClickAmount(newAmount);
+
+    console.log(newAmount);
+  };
+
+  useEffect(() => {
+    console.log(selectedHistory, selectedPair);
+
+    if (selectedPair[0] !== null && selectedPair[1] !== null) {
+      if (selectedPair[0] === selectedPair[1]) {
+        console.log('SAME');
+        setClickAmount(-1);
+        setSelectedPair([null, null]);
+      } else {
+        console.log('DIF');
+        setClickAmount(-1);
+      }
+    }
+  }, [selectedHistory, selectedPair]);
 
   useEffect(() => {
     if (scene) {
@@ -32,15 +73,18 @@ const App: React.FC = () => {
           <Helpers />
           <group position={[-canvasWidth / 2, 0, 0]} name={'lockers'}>
             {Array.from({ length: size[0] * size[1] }).map((_, i) => {
-              const index = getRandomImage(pairArray);
               return (
                 <Locker
-                  index={index}
+                  index={indexes[i]}
                   key={`${i}`}
                   x={(i % size[0]) + 1}
                   y={Math.floor(i / size[0]) + 1}
                   size={size}
                   boxSize={boxSize}
+                  clickAmount={clickAmount}
+                  handleClickAmount={handleClickAmount}
+                  selectedPair={selectedPair}
+                  setSelectedPair={setSelectedPair}
                 />
               );
             })}

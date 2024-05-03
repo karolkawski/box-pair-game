@@ -6,7 +6,17 @@ import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 import { pairs } from '../../pairs';
 
-export const Locker = ({ x, y, index, size, boxSize }) => {
+export const Locker = ({
+  x,
+  y,
+  index,
+  size,
+  boxSize,
+  clickAmount,
+  handleClickAmount,
+  selectedPair,
+  setSelectedPair,
+}) => {
   const [selected, select] = useState(false);
   const [hovered, setHovered] = useState(false);
   const boxFbx = useLoader(FBXLoader, '/assets/Models/locker.fbx');
@@ -20,6 +30,14 @@ export const Locker = ({ x, y, index, size, boxSize }) => {
 
   const material = new THREE.MeshBasicMaterial({ map: texture });
 
+  const handleClick = () => {
+    if (clickAmount % 2 === 1) {
+      return;
+    }
+
+    select(!selected);
+  };
+
   useEffect(() => {
     document.body.style.cursor = hovered ? 'pointer' : 'auto';
   }, [hovered]);
@@ -30,6 +48,22 @@ export const Locker = ({ x, y, index, size, boxSize }) => {
     (gridSize[1] - boxSize) / 2,
   ];
 
+  useEffect(() => {
+    handleClickAmount(selected, index);
+  }, [selected]);
+
+  useEffect(() => {
+    if (selectedPair[0] !== null && selectedPair[1] !== null) {
+      if (selectedPair[0] === selectedPair[1]) {
+        return;
+      }
+      if (selectedPair.includes(index) && selected) {
+        select(!selected);
+        setSelectedPair([null, null]);
+      }
+    }
+  }, [selectedPair]);
+
   return (
     <group
       position={[gridCenter[0] - x * boxSize, gridCenter[1] - y * boxSize, 1]}
@@ -39,7 +73,7 @@ export const Locker = ({ x, y, index, size, boxSize }) => {
       <primitive
         object={door.clone()}
         name={'front'}
-        onClick={() => select(!selected)}
+        onClick={() => handleClick()}
         onPointerOver={() => setHovered(true)}
         onPointerOut={() => setHovered(false)}
       >
@@ -50,9 +84,14 @@ export const Locker = ({ x, y, index, size, boxSize }) => {
             transparent={selected}
           />
         ) : (
-          <meshStandardMaterial color={selected ? 'hotpink' : 'gray'} />
+          <meshStandardMaterial color={'gray'} />
         )}
-        <Edges linewidth={1} scale={1.1} threshold={15} color="white" />
+        <Edges
+          linewidth={selected ? 0.5 : 0.1}
+          scale={1.1}
+          threshold={15}
+          color="white"
+        />
       </primitive>
       <primitive object={image.clone()} name={'image'}>
         <meshBasicMaterial attach="material" map={texture} />
