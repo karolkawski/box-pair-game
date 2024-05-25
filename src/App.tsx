@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { CameraController } from './components/CameraControler';
 import { getRandomImage } from './utils/getRandomImage';
@@ -14,34 +14,76 @@ const pairArray = createArray(pairNumber);
 const indexes = Array.from({ length: size[0] * size[1] }).map((_, i) => {
   return getRandomImage(pairArray);
 });
+let matrix = Array.from({ length: 4 }, () =>
+  Array.from({ length: 4 }, () => 0)
+);
 
 const App: React.FC = () => {
   const gridSize = size.map((s) => s * boxSize);
   const [scene, setScene] = useState(null);
   const [clickAmount, setClickAmount] = useState(0);
   const [timer, setTimer] = useState();
-  const [selectedPair, setSelectedPair] = useState([null, null]);
+  const [blocked, setBlocked] = useState(false);
+  const [selectedPair, setSelectedPair] = useState([
+    [null, null],
+    [null, null],
+  ]);
   const [selectedHistory, setSelectedHistory] = useState([]);
+  const [selectedMatrix, setSelectedMatrix] = useState(matrix);
   const groupRef = useRef();
 
-  const handleClickAmount = (selected, index) => {
+  const handleClickAmount = (selected, x, y, index) => {
+    const matrixCopy = [...matrix];
+    matrixCopy[y][x] = selected ? index : 0;
+    setSelectedMatrix(matrixCopy);
+
     let newAmount = clickAmount;
     const [first, second] = selectedPair;
-
     if (selected) {
       newAmount += 1;
       setSelectedHistory([...selectedHistory, index]);
-      if (first === null) {
-        setSelectedPair([index, second]);
+      if (first[0] === null && first[1] === null) {
+        setSelectedPair([[x, y], second]);
       } else {
-        setSelectedPair([first, index]);
+        setSelectedPair([first, [x, y]]);
       }
     } else if (newAmount > 0) {
       newAmount -= 1;
     }
     setClickAmount(newAmount);
   };
-  const onMouseMove = (event) => {
+
+  useEffect(() => {
+    const [first, second] = selectedPair;
+    if (
+      first[0] !== null &&
+      first[1] !== null &&
+      second[0] !== null &&
+      second[1] !== null
+    ) {
+      setBlocked(true);
+      const A = matrix[first[1]][first[0]];
+      const B = matrix[second[1]][second[0]];
+
+      const matrixCopy = [...matrix];
+      if (A !== B) {
+        matrixCopy[first[1]][first[0]] = 0;
+        matrixCopy[second[1]][second[0]] = 0;
+      }
+
+      setTimeout(() => {
+        console.log('clear');
+        setSelectedPair([
+          [null, null],
+          [null, null],
+        ]);
+        setSelectedMatrix(matrixCopy);
+        setBlocked(false);
+      }, 5 * 1000);
+    }
+  }, [selectedPair]);
+
+  const onMouseMove = useCallback((event) => {
     const { clientX, clientY } = event;
     const { innerWidth, innerHeight } = window;
 
@@ -52,31 +94,17 @@ const App: React.FC = () => {
       groupRef.current.rotation.y = mouseX;
       groupRef.current.rotation.x = mouseY;
     }
-  };
+  }, []);
 
   useEffect(() => {
-    setInterval(() => {
-      const time = (
-        (new Date() - performance.timing.responseEnd) /
-        1000
-      ).toFixed(2);
-      setTimer(time);
-    }, 500);
-
     document.addEventListener('mousemove', onMouseMove);
 
     return () => {
       document.removeEventListener('mousemove', onMouseMove);
     };
-  }, []);
+  }, [onMouseMove]);
 
-  useEffect(() => {
-    if (scene) {
-      console.log('Scene:', scene);
-    }
-  }, [scene]);
-
-  const canvasWidth = gridSize[0] - (size[0] - 1);
+  const canvasWidth = gridSize[0] - (size[0] - 3);
 
   return (
     <div id="App">
@@ -103,13 +131,17 @@ const App: React.FC = () => {
                 <Locker
                   index={indexes[i]}
                   key={`${i}`}
-                  x={(i % size[0]) + 1}
-                  y={Math.floor(i / size[0]) + 1}
+                  x={i % size[0]}
+                  y={Math.floor(i / size[0])}
                   size={size}
                   boxSize={boxSize}
+                  blocked={blocked}
                   handleClickAmount={handleClickAmount}
-                  selectedPair={selectedPair}
-                  setSelectedPair={setSelectedPair}
+                  selected={
+                    selectedMatrix[Math.floor(i / size[0])][i % size[0]] !== 0
+                      ? true
+                      : false
+                  }
                 />
               );
             })}

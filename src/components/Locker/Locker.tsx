@@ -1,7 +1,6 @@
 import { useLoader } from '@react-three/fiber';
 import { useEffect, useState } from 'react';
 import { splitObject } from '../../utils/splitObject';
-import { Edges } from '@react-three/drei';
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 
@@ -11,11 +10,10 @@ export const Locker = ({
   index,
   size,
   boxSize,
+  blocked,
   handleClickAmount,
-  selectedPair,
-  setSelectedPair,
+  selected,
 }) => {
-  const [selected, select] = useState(false);
   const [hovered, setHovered] = useState(false);
   const boxFbx = useLoader(FBXLoader, '/assets/Models/locker.fbx');
   const [locker, door, image] = splitObject(boxFbx.children);
@@ -32,34 +30,19 @@ export const Locker = ({
   ];
 
   const handleSelectClick = () => {
-    const [first, second] = selectedPair;
-    if (first && second) {
-      setSelectedPair([null, null]);
+    if (blocked) {
       return;
     }
-    select(true);
+    handleClickAmount(true, x, y, index);
   };
 
   useEffect(() => {
-    document.body.style.cursor = hovered ? 'pointer' : 'auto';
-  }, [hovered]);
-
-  useEffect(() => {
-    handleClickAmount(selected, index);
-  }, [selected]);
-
-  useEffect(() => {
-    const [first, second] = selectedPair;
-    if (first !== null && second !== null) {
-      if (first === second) {
-        return;
-      }
-      if (selectedPair.includes(index) && selected) {
-        select(!selected);
-        setSelectedPair([null, null]);
-      }
+    if (blocked) {
+      document.body.style.cursor = 'cursor';
+      return;
     }
-  }, [selectedPair]);
+    document.body.style.cursor = hovered ? 'pointer' : 'cursor';
+  }, [hovered]);
 
   return (
     <group
@@ -71,7 +54,7 @@ export const Locker = ({
         object={door.clone()}
         name={'front'}
         onClick={() => handleSelectClick()}
-        onPointerOver={() => setHovered(true)}
+        onPointerOver={() => (blocked ? false : setHovered(true))}
         onPointerOut={() => setHovered(false)}
       >
         {selected ? (
@@ -80,15 +63,11 @@ export const Locker = ({
             opacity={0.01}
             transparent={selected}
           />
+        ) : hovered ? (
+          <meshStandardMaterial color={'#ff0000'} />
         ) : (
           <meshStandardMaterial color={'gray'} />
         )}
-        <Edges
-          linewidth={selected ? 0.5 : 0.1}
-          scale={1.1}
-          threshold={15}
-          color="white"
-        />
       </primitive>
       <primitive object={image.clone()} name={'image'}>
         <meshBasicMaterial attach="material" map={texture} />
